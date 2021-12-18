@@ -562,13 +562,23 @@ impl Instructions {
             Reloc::Br { pc } => match self.vec[pc as usize] {
                 InstructionInternal::Br(ref mut target)
                 | InstructionInternal::BrIfEqz(ref mut target)
-                | InstructionInternal::BrIfNez(ref mut target) => target.dst_pc = dst_pc,
-                _ => panic!("branch relocation points to a non-branch instruction"),
+                | InstructionInternal::BrIfNez(ref mut target) => {
+                    target.dst_pc = dst_pc
+                }
+                _ => panic!(
+                    "branch relocation points to a non-branch instruction"
+                ),
             },
-            Reloc::BrTable { pc, idx } => match &mut self.vec[pc as usize + idx + 1] {
-                InstructionInternal::BrTableTarget(target) => target.dst_pc = dst_pc,
-                _ => panic!("brtable relocation points to not brtable instruction"),
-            },
+            Reloc::BrTable { pc, idx } => {
+                match &mut self.vec[pc as usize + idx + 1] {
+                    InstructionInternal::BrTableTarget(target) => {
+                        target.dst_pc = dst_pc
+                    }
+                    _ => panic!(
+                        "brtable relocation points to not brtable instruction"
+                    ),
+                }
+            }
         }
     }
 
@@ -615,13 +625,17 @@ impl<'a> Iterator for InstructionIter<'a> {
                     &self.instructions[start..start + count as usize],
                 ))
             }
-            InstructionInternal::BrTableTarget(_) => panic!("Executed BrTableTarget"),
+            InstructionInternal::BrTableTarget(_) => {
+                panic!("Executed BrTableTarget")
+            }
 
             InstructionInternal::Unreachable => Instruction::Unreachable,
             InstructionInternal::Return(x) => Instruction::Return(x),
 
             InstructionInternal::Call(x) => Instruction::Call(x),
-            InstructionInternal::CallIndirect(x) => Instruction::CallIndirect(x),
+            InstructionInternal::CallIndirect(x) => {
+                Instruction::CallIndirect(x)
+            }
 
             InstructionInternal::Drop => Instruction::Drop,
             InstructionInternal::Select => Instruction::Select,
@@ -787,10 +801,18 @@ impl<'a> Iterator for InstructionIter<'a> {
             InstructionInternal::F64ConvertUI64 => Instruction::F64ConvertUI64,
             InstructionInternal::F64PromoteF32 => Instruction::F64PromoteF32,
 
-            InstructionInternal::I32ReinterpretF32 => Instruction::I32ReinterpretF32,
-            InstructionInternal::I64ReinterpretF64 => Instruction::I64ReinterpretF64,
-            InstructionInternal::F32ReinterpretI32 => Instruction::F32ReinterpretI32,
-            InstructionInternal::F64ReinterpretI64 => Instruction::F64ReinterpretI64,
+            InstructionInternal::I32ReinterpretF32 => {
+                Instruction::I32ReinterpretF32
+            }
+            InstructionInternal::I64ReinterpretF64 => {
+                Instruction::I64ReinterpretF64
+            }
+            InstructionInternal::F32ReinterpretI32 => {
+                Instruction::F32ReinterpretI32
+            }
+            InstructionInternal::F64ReinterpretI64 => {
+                Instruction::F64ReinterpretI64
+            }
         };
 
         self.position += 1;

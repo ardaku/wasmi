@@ -63,8 +63,14 @@ impl TableInstance {
     /// # Errors
     ///
     /// Returns `Err` if `initial_size` is greater than `maximum_size`.
-    pub fn alloc(initial_size: u32, maximum_size: Option<u32>) -> Result<TableRef, Error> {
-        let table = TableInstance::new(ResizableLimits::new(initial_size, maximum_size))?;
+    pub fn alloc(
+        initial_size: u32,
+        maximum_size: Option<u32>,
+    ) -> Result<TableRef, Error> {
+        let table = TableInstance::new(ResizableLimits::new(
+            initial_size,
+            maximum_size,
+        ))?;
         Ok(TableRef(Rc::new(table)))
     }
 
@@ -139,7 +145,11 @@ impl TableInstance {
     }
 
     /// Set the table element to the specified function.
-    pub fn set(&self, offset: u32, value: Option<FuncRef>) -> Result<(), Error> {
+    pub fn set(
+        &self,
+        offset: u32,
+        value: Option<FuncRef>,
+    ) -> Result<(), Error> {
         let mut buffer = self.buffer.borrow_mut();
         let buffer_len = buffer.len();
         let table_elem = buffer.get_mut(offset as usize).ok_or_else(|| {

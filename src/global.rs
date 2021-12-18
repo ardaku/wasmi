@@ -62,7 +62,9 @@ impl GlobalInstance {
             ));
         }
         if self.value_type() != val.value_type() {
-            return Err(Error::Global("Attempt to change variable type".into()));
+            return Err(Error::Global(
+                "Attempt to change variable type".into(),
+            ));
         }
         self.val.set(val);
         Ok(())

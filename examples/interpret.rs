@@ -4,7 +4,9 @@ extern crate wasmi;
 
 use std::env::args;
 use std::fs::File;
-use wasmi::{ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue};
+use wasmi::{
+    ImportsBuilder, Module, ModuleInstance, NopExternals, RuntimeValue,
+};
 
 fn load_from_file(filename: &str) -> Module {
     use std::io::prelude::*;
@@ -42,6 +44,10 @@ fn main() {
     // "_call" export of function to be executed with an i32 argument and prints the result of execution
     println!(
         "Result: {:?}",
-        main.invoke_export("_call", &[RuntimeValue::I32(argument)], &mut NopExternals)
+        main.invoke_export(
+            "_call",
+            &[RuntimeValue::I32(argument)],
+            &mut NopExternals
+        )
     );
 }

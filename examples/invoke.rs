@@ -3,7 +3,9 @@ extern crate wasmi;
 
 use std::env::args;
 
-use parity_wasm::elements::{External, FunctionType, Internal, Module, Type, ValueType};
+use parity_wasm::elements::{
+    External, FunctionType, Internal, Module, Type, ValueType,
+};
 use wasmi::{ImportsBuilder, ModuleInstance, NopExternals, RuntimeValue};
 
 fn main() {
@@ -20,13 +22,15 @@ fn main() {
     // Extracts call arguments from command-line arguments
     let args = {
         // Export section has an entry with a func_name with an index inside a module
-        let export_section = module.export_section().expect("No export section found");
+        let export_section =
+            module.export_section().expect("No export section found");
         // It's a section with function declarations (which are references to the type section entries)
         let function_section = module
             .function_section()
             .expect("No function section found");
         // Type section stores function types which are referenced by function_section entries
-        let type_section = module.type_section().expect("No type section found");
+        let type_section =
+            module.type_section().expect("No type section found");
 
         // Given function name used to find export section entry which contains
         // an `internal` field which points to the index in the function index space
@@ -34,7 +38,9 @@ fn main() {
             .entries()
             .iter()
             .find(|entry| func_name == entry.field())
-            .unwrap_or_else(|| panic!("No export with name {} found", func_name));
+            .unwrap_or_else(|| {
+                panic!("No export with name {} found", func_name)
+            });
 
         // Function index in the function index space (internally-defined + imported)
         let function_index: usize = match found_entry.internal() {
@@ -48,7 +54,9 @@ fn main() {
             Some(import) => import
                 .entries()
                 .iter()
-                .filter(|entry| matches!(entry.external(), External::Function(_)))
+                .filter(|entry| {
+                    matches!(entry.external(), External::Function(_))
+                })
                 .count(),
             None => 0,
         };
@@ -57,14 +65,16 @@ fn main() {
         let function_index_in_section = function_index - import_section_len;
 
         // Getting a type reference from a function section entry
-        let func_type_ref: usize =
-            function_section.entries()[function_index_in_section].type_ref() as usize;
+        let func_type_ref: usize = function_section.entries()
+            [function_index_in_section]
+            .type_ref() as usize;
 
         // Use the reference to get an actual function type
         #[allow(clippy::infallible_destructuring_match)]
-        let function_type: &FunctionType = match &type_section.types()[func_type_ref] {
-            Type::Function(ref func_type) => func_type,
-        };
+        let function_type: &FunctionType =
+            match &type_section.types()[func_type_ref] {
+                Type::Function(ref func_type) => func_type,
+            };
 
         // Parses arguments and constructs runtime values in correspondence of their types
         function_type
@@ -73,32 +83,43 @@ fn main() {
             .enumerate()
             .map(|(i, value)| match value {
                 ValueType::I32 => RuntimeValue::I32(
-                    program_args[i]
-                        .parse::<i32>()
-                        .unwrap_or_else(|_| panic!("Can't parse arg #{} as i32", program_args[i])),
+                    program_args[i].parse::<i32>().unwrap_or_else(|_| {
+                        panic!("Can't parse arg #{} as i32", program_args[i])
+                    }),
                 ),
                 ValueType::I64 => RuntimeValue::I64(
-                    program_args[i]
-                        .parse::<i64>()
-                        .unwrap_or_else(|_| panic!("Can't parse arg #{} as i64", program_args[i])),
+                    program_args[i].parse::<i64>().unwrap_or_else(|_| {
+                        panic!("Can't parse arg #{} as i64", program_args[i])
+                    }),
                 ),
                 ValueType::F32 => RuntimeValue::F32(
                     program_args[i]
                         .parse::<f32>()
-                        .unwrap_or_else(|_| panic!("Can't parse arg #{} as f32", program_args[i]))
+                        .unwrap_or_else(|_| {
+                            panic!(
+                                "Can't parse arg #{} as f32",
+                                program_args[i]
+                            )
+                        })
                         .into(),
                 ),
                 ValueType::F64 => RuntimeValue::F64(
                     program_args[i]
                         .parse::<f64>()
-                        .unwrap_or_else(|_| panic!("Can't parse arg #{} as f64", program_args[i]))
+                        .unwrap_or_else(|_| {
+                            panic!(
+                                "Can't parse arg #{} as f64",
+                                program_args[i]
+                            )
+                        })
                         .into(),
                 ),
             })
             .collect::<Vec<RuntimeValue>>()
     };
 
-    let loaded_module = wasmi::Module::from_parity_wasm_module(module).expect("Module to be valid");
+    let loaded_module = wasmi::Module::from_parity_wasm_module(module)
+        .expect("Module to be valid");
 
     // Intialize deserialized module. It adds module into It expects 3 parameters:
     // - a name for the module

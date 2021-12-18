@@ -3,9 +3,10 @@ extern crate std;
 
 use crate::memory_units::Pages;
 use crate::{
-    Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder, MemoryDescriptor,
-    MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals,
-    RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
+    Error, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef,
+    ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module,
+    ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
+    Signature, TableDescriptor, TableInstance, TableRef,
 };
 use alloc::{format, vec::Vec};
 use std::fs::File;
@@ -29,7 +30,11 @@ impl Env {
 }
 
 impl ModuleImportResolver for Env {
-    fn resolve_func(&self, _field_name: &str, _func_type: &Signature) -> Result<FuncRef, Error> {
+    fn resolve_func(
+        &self,
+        _field_name: &str,
+        _func_type: &Signature,
+    ) -> Result<FuncRef, Error> {
         Err(Error::Instantiation(
             "env module doesn't provide any functions".into(),
         ))
@@ -99,9 +104,12 @@ fn interpreter_inc_i32() {
 
     let env = Env::new();
 
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     let i32_val = 42;
     // the functions expects a single i32 parameter
@@ -127,9 +135,12 @@ fn interpreter_accumulate_u8() {
     let module = load_from_file(WASM_FILE);
 
     let env = Env::new();
-    let instance = ModuleInstance::new(&module, &ImportsBuilder::new().with_resolver("env", &env))
-        .expect("Failed to instantiate module")
-        .assert_no_start();
+    let instance = ModuleInstance::new(
+        &module,
+        &ImportsBuilder::new().with_resolver("env", &env),
+    )
+    .expect("Failed to instantiate module")
+    .assert_no_start();
 
     let env_memory = env.memory;
 

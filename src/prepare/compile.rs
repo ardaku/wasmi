@@ -4,7 +4,8 @@ use parity_wasm::elements::{BlockType, FuncBody, Instruction};
 
 use crate::isa;
 use validation::func::{
-    require_label, top_label, BlockFrame, FunctionValidationContext, StackValueType, StartedWith,
+    require_label, top_label, BlockFrame, FunctionValidationContext,
+    StackValueType, StartedWith,
 };
 use validation::stack::StackWithLimit;
 use validation::util::Locals;
@@ -254,7 +255,8 @@ impl Compiler {
                 // At this point, the condition value is at the top of the stack.
                 // But at the point of actual jump the condition will already be
                 // popped off.
-                let value_stack_height = context.value_stack.len().saturating_sub(1);
+                let value_stack_height =
+                    context.value_stack.len().saturating_sub(1);
 
                 let targets = br_table_data
                     .table
@@ -283,13 +285,17 @@ impl Compiler {
                     validation also ensures that the depth is correct;
                     qed";
                 let targets = targets.expect(REQUIRE_TARGET_PROOF);
-                let default_target = default_target.expect(REQUIRE_TARGET_PROOF);
+                let default_target =
+                    default_target.expect(REQUIRE_TARGET_PROOF);
 
                 self.sink.emit_br_table(&targets, default_target);
             }
             Return => {
-                let drop_keep =
-                    drop_keep_return(&context.locals, &context.value_stack, &context.frame_stack);
+                let drop_keep = drop_keep_return(
+                    &context.locals,
+                    &context.value_stack,
+                    &context.frame_stack,
+                );
 
                 context.step(instruction)?;
 
@@ -323,18 +329,30 @@ impl Compiler {
             GetLocal(index) => {
                 // We need to calculate relative depth before validation since
                 // it will change the value stack size.
-                let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+                let depth = relative_local_depth(
+                    index,
+                    &context.locals,
+                    &context.value_stack,
+                )?;
                 context.step(instruction)?;
                 self.sink.emit(isa::InstructionInternal::GetLocal(depth));
             }
             SetLocal(index) => {
                 context.step(instruction)?;
-                let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+                let depth = relative_local_depth(
+                    index,
+                    &context.locals,
+                    &context.value_stack,
+                )?;
                 self.sink.emit(isa::InstructionInternal::SetLocal(depth));
             }
             TeeLocal(index) => {
                 context.step(instruction)?;
-                let depth = relative_local_depth(index, &context.locals, &context.value_stack)?;
+                let depth = relative_local_depth(
+                    index,
+                    &context.locals,
+                    &context.value_stack,
+                )?;
                 self.sink.emit(isa::InstructionInternal::TeeLocal(depth));
             }
             GetGlobal(index) => {
@@ -1011,14 +1029,17 @@ fn compute_drop_keep(
                 start_value_stack_height,
             )));
         }
-        if (actual_value_stack_height as u32 - start_value_stack_height as u32) < keep.count() {
+        if (actual_value_stack_height as u32 - start_value_stack_height as u32)
+            < keep.count()
+        {
             return Err(Error(format!(
                 "Stack underflow detected: asked to keep {:?} values, but there are only {}",
                 keep,
                 actual_value_stack_height as u32 - start_value_stack_height as u32,
             )));
         }
-        (actual_value_stack_height as u32 - start_value_stack_height as u32) - keep.count()
+        (actual_value_stack_height as u32 - start_value_stack_height as u32)
+            - keep.count()
     };
 
     Ok(isa::DropKeep { drop, keep })
@@ -1075,7 +1096,8 @@ fn drop_keep_return(
 ) -> Result<isa::DropKeep, Error> {
     if frame_stack.is_empty() {
         return Err(Error(
-            "drop_keep_return can't be called with the frame stack empty".into(),
+            "drop_keep_return can't be called with the frame stack empty"
+                .into(),
         ));
     }
 
@@ -1084,7 +1106,8 @@ fn drop_keep_return(
         .len()
         .checked_sub(1)
         .expect("frame_stack is not empty") as u32;
-    let frame = require_label(deepest, frame_stack).expect("frame_stack is not empty");
+    let frame =
+        require_label(deepest, frame_stack).expect("frame_stack is not empty");
     let mut drop_keep = compute_drop_keep(
         is_stack_polymorphic,
         frame.started_with,
@@ -1114,7 +1137,9 @@ fn relative_local_depth(
     let depth = value_stack_height
         .checked_add(locals_and_params_count)
         .and_then(|x| x.checked_sub(idx))
-        .ok_or_else(|| Error(String::from("Locals range not in 32-bit range")))?;
+        .ok_or_else(|| {
+            Error(String::from("Locals range not in 32-bit range"))
+        })?;
     Ok(depth)
 }
 
@@ -1217,12 +1242,11 @@ impl Sink {
         for (idx, &Target { label, drop_keep }) in
             targets.iter().chain(iter::once(&default)).enumerate()
         {
-            let dst_pc = self.pc_or_placeholder(label, || isa::Reloc::BrTable { pc, idx });
-            self.ins
-                .push(isa::InstructionInternal::BrTableTarget(isa::Target {
-                    dst_pc,
-                    drop_keep,
-                }));
+            let dst_pc = self
+                .pc_or_placeholder(label, || isa::Reloc::BrTable { pc, idx });
+            self.ins.push(isa::InstructionInternal::BrTableTarget(
+                isa::Target { dst_pc, drop_keep },
+            ));
         }
     }
 

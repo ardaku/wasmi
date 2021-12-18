@@ -1,10 +1,12 @@
 use crate::{
-    context::ModuleContext, stack::StackWithLimit, util::Locals, Error, FuncValidator,
-    DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX,
+    context::ModuleContext, stack::StackWithLimit, util::Locals, Error,
+    FuncValidator, DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX,
 };
 
 use core::u32;
-use parity_wasm::elements::{BlockType, Func, FuncBody, Instruction, TableElementType, ValueType};
+use parity_wasm::elements::{
+    BlockType, Func, FuncBody, Instruction, TableElementType, ValueType,
+};
 
 /// Maximum number of entries in value stack per function.
 const DEFAULT_VALUE_STACK_LIMIT: usize = 16384;
@@ -60,9 +62,10 @@ impl PartialEq<StackValueType> for StackValueType {
             // Any type is equal with any other type.
             (StackValueType::Any, _) => true,
             (_, StackValueType::Any) => true,
-            (StackValueType::Specific(self_ty), StackValueType::Specific(other_ty)) => {
-                self_ty == other_ty
-            }
+            (
+                StackValueType::Specific(self_ty),
+                StackValueType::Specific(other_ty),
+            ) => self_ty == other_ty,
         }
     }
 }
@@ -170,7 +173,10 @@ impl<'a> FunctionValidationContext<'a> {
             Nop => {}
 
             Unreachable => {
-                make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
+                make_top_frame_polymorphic(
+                    &mut self.value_stack,
+                    &mut self.frame_stack,
+                );
             }
 
             Block(block_type) => {
@@ -225,7 +231,8 @@ impl<'a> FunctionValidationContext<'a> {
                 let block_type = {
                     let top = top_label(&self.frame_stack);
 
-                    if top.started_with == StartedWith::If && top.block_type != BlockType::NoResult
+                    if top.started_with == StartedWith::If
+                        && top.block_type != BlockType::NoResult
                     {
                         // A `if` without an `else` can't return a result.
                         return Err(Error(format!(
@@ -244,7 +251,11 @@ impl<'a> FunctionValidationContext<'a> {
 
                     // Check the return type.
                     if let BlockType::Value(value_type) = self.return_type {
-                        tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
+                        tee_value(
+                            &mut self.value_stack,
+                            &self.frame_stack,
+                            value_type.into(),
+                        )?;
                     }
 
                     pop_label(&mut self.value_stack, &mut self.frame_stack)?;
@@ -263,20 +274,36 @@ impl<'a> FunctionValidationContext<'a> {
             }
             Br(depth) => {
                 self.validate_br(depth)?;
-                make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
+                make_top_frame_polymorphic(
+                    &mut self.value_stack,
+                    &mut self.frame_stack,
+                );
             }
             BrIf(depth) => {
                 self.validate_br_if(depth)?;
             }
             BrTable(ref br_table_data) => {
-                self.validate_br_table(&*br_table_data.table, br_table_data.default)?;
-                make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
+                self.validate_br_table(
+                    &*br_table_data.table,
+                    br_table_data.default,
+                )?;
+                make_top_frame_polymorphic(
+                    &mut self.value_stack,
+                    &mut self.frame_stack,
+                );
             }
             Return => {
                 if let BlockType::Value(value_type) = self.return_type {
-                    tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
+                    tee_value(
+                        &mut self.value_stack,
+                        &self.frame_stack,
+                        value_type.into(),
+                    )?;
                 }
-                make_top_frame_polymorphic(&mut self.value_stack, &mut self.frame_stack);
+                make_top_frame_polymorphic(
+                    &mut self.value_stack,
+                    &mut self.frame_stack,
+                );
             }
 
             Call(index) => {
@@ -819,7 +846,11 @@ impl<'a> FunctionValidationContext<'a> {
         value_type1: ValueType,
         value_type2: ValueType,
     ) -> Result<(), Error> {
-        pop_value(&mut self.value_stack, &self.frame_stack, value_type1.into())?;
+        pop_value(
+            &mut self.value_stack,
+            &self.frame_stack,
+            value_type1.into(),
+        )?;
         push_value(&mut self.value_stack, value_type2.into())?;
         Ok(())
     }
@@ -958,7 +989,11 @@ impl<'a> FunctionValidationContext<'a> {
         };
         if started_with != StartedWith::Loop {
             if let BlockType::Value(value_type) = frame_block_type {
-                tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
+                tee_value(
+                    &mut self.value_stack,
+                    &self.frame_stack,
+                    value_type.into(),
+                )?;
             }
         }
         Ok(())
@@ -977,28 +1012,38 @@ impl<'a> FunctionValidationContext<'a> {
         };
         if started_with != StartedWith::Loop {
             if let BlockType::Value(value_type) = frame_block_type {
-                tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
+                tee_value(
+                    &mut self.value_stack,
+                    &self.frame_stack,
+                    value_type.into(),
+                )?;
             }
         }
         Ok(())
     }
 
-    fn validate_br_table(&mut self, table: &[u32], default: u32) -> Result<(), Error> {
+    fn validate_br_table(
+        &mut self,
+        table: &[u32],
+        default: u32,
+    ) -> Result<(), Error> {
         let required_block_type: BlockType = {
             let default_block = require_label(default, &self.frame_stack)?;
-            let required_block_type = if default_block.started_with == StartedWith::Loop {
-                BlockType::NoResult
-            } else {
-                default_block.block_type
-            };
+            let required_block_type =
+                if default_block.started_with == StartedWith::Loop {
+                    BlockType::NoResult
+                } else {
+                    default_block.block_type
+                };
 
             for label in table {
                 let label_block = require_label(*label, &self.frame_stack)?;
-                let label_block_type = if label_block.started_with == StartedWith::Loop {
-                    BlockType::NoResult
-                } else {
-                    label_block.block_type
-                };
+                let label_block_type =
+                    if label_block.started_with == StartedWith::Loop {
+                        BlockType::NoResult
+                    } else {
+                        label_block.block_type
+                    };
                 if required_block_type != label_block_type {
                     return Err(Error(format!(
                         "Labels in br_table points to block of different types: {:?} and {:?}",
@@ -1015,14 +1060,19 @@ impl<'a> FunctionValidationContext<'a> {
             ValueType::I32.into(),
         )?;
         if let BlockType::Value(value_type) = required_block_type {
-            tee_value(&mut self.value_stack, &self.frame_stack, value_type.into())?;
+            tee_value(
+                &mut self.value_stack,
+                &self.frame_stack,
+                value_type.into(),
+            )?;
         }
 
         Ok(())
     }
 
     fn validate_call(&mut self, idx: u32) -> Result<(), Error> {
-        let (argument_types, return_type) = self.module.require_function(idx)?;
+        let (argument_types, return_type) =
+            self.module.require_function(idx)?;
         for argument_type in argument_types.iter().rev() {
             pop_value(
                 &mut self.value_stack,
@@ -1053,7 +1103,8 @@ impl<'a> FunctionValidationContext<'a> {
             &self.frame_stack,
             ValueType::I32.into(),
         )?;
-        let (argument_types, return_type) = self.module.require_function_type(idx)?;
+        let (argument_types, return_type) =
+            self.module.require_function_type(idx)?;
         for argument_type in argument_types.iter().rev() {
             pop_value(
                 &mut self.value_stack,
@@ -1121,12 +1172,16 @@ fn pop_value(
             .expect("at least 1 topmost block")
             .value_stack_len;
         if value_stack.len() <= value_stack_min {
-            return Err(Error("Trying to access parent frame stack values.".into()));
+            return Err(Error(
+                "Trying to access parent frame stack values.".into(),
+            ));
         }
         value_stack.pop()?
     };
     match actual_value {
-        StackValueType::Specific(stack_value_type) if stack_value_type == expected_value_ty => {
+        StackValueType::Specific(stack_value_type)
+            if stack_value_type == expected_value_ty =>
+        {
             Ok(actual_value)
         }
         StackValueType::Any => Ok(actual_value),

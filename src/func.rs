@@ -1,7 +1,9 @@
 use crate::host::Externals;
 use crate::isa;
 use crate::module::ModuleInstance;
-use crate::runner::{check_function_args, Interpreter, InterpreterState, StackRecycler};
+use crate::runner::{
+    check_function_args, Interpreter, InterpreterState, StackRecycler,
+};
 use crate::types::ValueType;
 use crate::value::RuntimeValue;
 use crate::{Signature, Trap};
@@ -120,7 +122,9 @@ impl FuncInstance {
 
     pub(crate) fn body(&self) -> Option<Rc<FuncBody>> {
         match *self.as_internal() {
-            FuncInstanceInternal::Internal { ref body, .. } => Some(Rc::clone(body)),
+            FuncInstanceInternal::Internal { ref body, .. } => {
+                Some(Rc::clone(body))
+            }
             FuncInstanceInternal::Host { .. } => None,
         }
     }
@@ -168,7 +172,8 @@ impl FuncInstance {
         check_function_args(func.signature(), args)?;
         match *func.as_internal() {
             FuncInstanceInternal::Internal { .. } => {
-                let mut interpreter = Interpreter::new(func, args, Some(stack_recycler))?;
+                let mut interpreter =
+                    Interpreter::new(func, args, Some(stack_recycler))?;
                 let return_value = interpreter.start_execution(externals);
                 stack_recycler.recycle(interpreter);
                 return_value
@@ -269,7 +274,9 @@ impl<'args> FuncInvocation<'args> {
     /// Whether this invocation is currently resumable.
     pub fn is_resumable(&self) -> bool {
         match &self.kind {
-            FuncInvocationKind::Internal(ref interpreter) => interpreter.state().is_resumable(),
+            FuncInvocationKind::Internal(ref interpreter) => {
+                interpreter.state().is_resumable()
+            }
             FuncInvocationKind::Host { .. } => false,
         }
     }
@@ -277,10 +284,12 @@ impl<'args> FuncInvocation<'args> {
     /// If the invocation is resumable, the expected return value type to be feed back in.
     pub fn resumable_value_type(&self) -> Option<ValueType> {
         match &self.kind {
-            FuncInvocationKind::Internal(ref interpreter) => match interpreter.state() {
-                InterpreterState::Resumable(ref value_type) => *value_type,
-                _ => None,
-            },
+            FuncInvocationKind::Internal(ref interpreter) => {
+                match interpreter.state() {
+                    InterpreterState::Resumable(ref value_type) => *value_type,
+                    _ => None,
+                }
+            }
             FuncInvocationKind::Host { .. } => None,
         }
     }
@@ -306,7 +315,8 @@ impl<'args> FuncInvocation<'args> {
                     return Err(ResumableError::AlreadyStarted);
                 }
                 *finished = true;
-                Ok(externals.invoke_index(*host_func_index, args.as_ref().into())?)
+                Ok(externals
+                    .invoke_index(*host_func_index, args.as_ref().into())?)
             }
         }
     }
@@ -340,7 +350,9 @@ impl<'args> FuncInvocation<'args> {
                     Err(ResumableError::AlreadyStarted)
                 }
             }
-            FuncInvocationKind::Host { .. } => Err(ResumableError::NotResumable),
+            FuncInvocationKind::Host { .. } => {
+                Err(ResumableError::NotResumable)
+            }
         }
     }
 }

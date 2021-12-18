@@ -6,10 +6,11 @@ use std::fs::File;
 use wabt::script::{self, Action, Command, CommandKind, ScriptParser, Value};
 use wasmi::memory_units::Pages;
 use wasmi::{
-    Error as InterpreterError, Externals, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance,
-    GlobalRef, ImportResolver, ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module,
-    ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature,
-    TableDescriptor, TableInstance, TableRef, Trap,
+    Error as InterpreterError, Externals, FuncInstance, FuncRef,
+    GlobalDescriptor, GlobalInstance, GlobalRef, ImportResolver,
+    ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module,
+    ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue,
+    Signature, TableDescriptor, TableInstance, TableRef, Trap,
 };
 
 fn spec_to_runtime_value(val: Value<u32, u64>) -> RuntimeValue {
@@ -56,8 +57,14 @@ impl SpecModule {
             table: TableInstance::alloc(10, Some(20)).unwrap(),
             memory: MemoryInstance::alloc(Pages(1), Some(Pages(2))).unwrap(),
             global_i32: GlobalInstance::alloc(RuntimeValue::I32(666), false),
-            global_f32: GlobalInstance::alloc(RuntimeValue::F32(666.0.into()), false),
-            global_f64: GlobalInstance::alloc(RuntimeValue::F64(666.0.into()), false),
+            global_f32: GlobalInstance::alloc(
+                RuntimeValue::F32(666.0.into()),
+                false,
+            ),
+            global_f64: GlobalInstance::alloc(
+                RuntimeValue::F64(666.0.into()),
+                false,
+            ),
         }
     }
 }
@@ -75,7 +82,9 @@ impl Externals for SpecModule {
                 println!("print: {:?}", args);
                 Ok(None)
             }
-            _ => panic!("SpecModule doesn't provide function at index {}", index),
+            _ => {
+                panic!("SpecModule doesn't provide function at index {}", index)
+            }
         }
     }
 }
@@ -186,17 +195,22 @@ impl SpecDriver {
 
     fn module(&self, name: &str) -> Result<ModuleRef, InterpreterError> {
         self.instances.get(name).cloned().ok_or_else(|| {
-            InterpreterError::Instantiation(format!("Module not registered {}", name))
+            InterpreterError::Instantiation(format!(
+                "Module not registered {}",
+                name
+            ))
         })
     }
 
-    fn module_or_last(&self, name: Option<&str>) -> Result<ModuleRef, InterpreterError> {
+    fn module_or_last(
+        &self,
+        name: Option<&str>,
+    ) -> Result<ModuleRef, InterpreterError> {
         match name {
             Some(name) => self.module(name),
-            None => self
-                .last_module
-                .clone()
-                .ok_or_else(|| InterpreterError::Instantiation("No modules registered".into())),
+            None => self.last_module.clone().ok_or_else(|| {
+                InterpreterError::Instantiation("No modules registered".into())
+            }),
         }
     }
 }
@@ -301,7 +315,12 @@ fn run_action(
         } => {
             let module = program
                 .module_or_last(module.as_ref().map(|x| x.as_ref()))
-                .unwrap_or_else(|_| panic!("Expected program to have loaded module {:?}", module));
+                .unwrap_or_else(|_| {
+                    panic!(
+                        "Expected program to have loaded module {:?}",
+                        module
+                    )
+                });
             let vec_args = args
                 .iter()
                 .cloned()
@@ -316,16 +335,27 @@ fn run_action(
         } => {
             let module = program
                 .module_or_last(module.as_ref().map(|x| x.as_ref()))
-                .unwrap_or_else(|_| panic!("Expected program to have loaded module {:?}", module));
+                .unwrap_or_else(|_| {
+                    panic!(
+                        "Expected program to have loaded module {:?}",
+                        module
+                    )
+                });
             let global = module
                 .export_by_name(&field)
                 .ok_or_else(|| {
-                    InterpreterError::Global(format!("Expected to have export with name {}", field))
+                    InterpreterError::Global(format!(
+                        "Expected to have export with name {}",
+                        field
+                    ))
                 })?
                 .as_global()
                 .cloned()
                 .ok_or_else(|| {
-                    InterpreterError::Global(format!("Expected export {} to be a global", field))
+                    InterpreterError::Global(format!(
+                        "Expected export {} to be a global",
+                        field
+                    ))
                 })?;
             Ok(Some(global.get()))
         }
@@ -348,8 +378,11 @@ fn try_spec(name: &str) -> Result<(), Error> {
         .read_to_end(&mut spec_source)
         .expect("Can't read file");
 
-    let mut parser = ScriptParser::from_source_and_name(&spec_source, &format!("{}.wast", name))
-        .expect("Can't read spec script");
+    let mut parser = ScriptParser::from_source_and_name(
+        &spec_source,
+        &format!("{}.wast", name),
+    )
+    .expect("Can't read spec script");
     let mut errors = vec![];
 
     while let Some(Command { kind, line }) = parser.next()? {
@@ -385,27 +418,44 @@ fn try_spec(name: &str) -> Result<(), Error> {
                             .cloned()
                             .map(spec_to_runtime_value)
                             .collect::<Vec<_>>();
-                        let actual_result = result.into_iter().collect::<Vec<RuntimeValue>>();
+                        let actual_result =
+                            result.into_iter().collect::<Vec<RuntimeValue>>();
                         for (actual_result, spec_expected) in
                             actual_result.iter().zip(spec_expected.iter())
                         {
-                            assert_eq!(actual_result.value_type(), spec_expected.value_type());
+                            assert_eq!(
+                                actual_result.value_type(),
+                                spec_expected.value_type()
+                            );
                             // f32::NAN != f32::NAN
                             match spec_expected {
-                                RuntimeValue::F32(val) if val.is_nan() => match actual_result {
-                                    RuntimeValue::F32(val) => assert!(val.is_nan()),
-                                    _ => unreachable!(), // checked above that types are same
-                                },
-                                RuntimeValue::F64(val) if val.is_nan() => match actual_result {
-                                    RuntimeValue::F64(val) => assert!(val.is_nan()),
-                                    _ => unreachable!(), // checked above that types are same
-                                },
-                                spec_expected => assert_eq!(actual_result, spec_expected),
+                                RuntimeValue::F32(val) if val.is_nan() => {
+                                    match actual_result {
+                                        RuntimeValue::F32(val) => {
+                                            assert!(val.is_nan())
+                                        }
+                                        _ => unreachable!(), // checked above that types are same
+                                    }
+                                }
+                                RuntimeValue::F64(val) if val.is_nan() => {
+                                    match actual_result {
+                                        RuntimeValue::F64(val) => {
+                                            assert!(val.is_nan())
+                                        }
+                                        _ => unreachable!(), // checked above that types are same
+                                    }
+                                }
+                                spec_expected => {
+                                    assert_eq!(actual_result, spec_expected)
+                                }
                             }
                         }
                     }
                     Err(e) => {
-                        panic!("Expected action to return value, got error: {:?}", e);
+                        panic!(
+                            "Expected action to return value, got error: {:?}",
+                            e
+                        );
                     }
                 }
             }
@@ -414,16 +464,24 @@ fn try_spec(name: &str) -> Result<(), Error> {
                 let result = run_action(&mut spec_driver, &action);
                 match result {
                     Ok(result) => {
-                        for actual_result in result.into_iter().collect::<Vec<RuntimeValue>>() {
+                        for actual_result in
+                            result.into_iter().collect::<Vec<RuntimeValue>>()
+                        {
                             match actual_result {
                                 RuntimeValue::F32(val) => {
                                     if !val.is_nan() {
-                                        panic!("Expected nan value, got {:?}", val)
+                                        panic!(
+                                            "Expected nan value, got {:?}",
+                                            val
+                                        )
                                     }
                                 }
                                 RuntimeValue::F64(val) => {
                                     if !val.is_nan() {
-                                        panic!("Expected nan value, got {:?}", val)
+                                        panic!(
+                                            "Expected nan value, got {:?}",
+                                            val
+                                        )
                                     }
                                 }
                                 val => {
@@ -433,14 +491,19 @@ fn try_spec(name: &str) -> Result<(), Error> {
                         }
                     }
                     Err(e) => {
-                        panic!("Expected action to return value, got error: {:?}", e);
+                        panic!(
+                            "Expected action to return value, got error: {:?}",
+                            e
+                        );
                     }
                 }
             }
             CommandKind::AssertExhaustion { action, .. } => {
                 let result = run_action(&mut spec_driver, &action);
                 match result {
-                    Ok(result) => panic!("Expected exhaustion, got result: {:?}", result),
+                    Ok(result) => {
+                        panic!("Expected exhaustion, got result: {:?}", result)
+                    }
                     Err(_e) => {}
                 }
             }
@@ -459,29 +522,44 @@ fn try_spec(name: &str) -> Result<(), Error> {
             CommandKind::AssertInvalid { module, .. }
             | CommandKind::AssertMalformed { module, .. }
             | CommandKind::AssertUnlinkable { module, .. } => {
-                let module_load = try_load(&module.into_vec(), &mut spec_driver);
+                let module_load =
+                    try_load(&module.into_vec(), &mut spec_driver);
                 match module_load {
-                    Ok(_) => panic!("Expected invalid module definition, got some module!"),
+                    Ok(_) => panic!(
+                        "Expected invalid module definition, got some module!"
+                    ),
                     Err(_e) => {}
                 }
             }
             CommandKind::AssertUninstantiable { module, .. } => {
                 match try_load(&module.into_vec(), &mut spec_driver) {
-                    Ok(_) => panic!("Expected error running start function at line {}", line),
+                    Ok(_) => panic!(
+                        "Expected error running start function at line {}",
+                        line
+                    ),
                     Err(_e) => {}
                 }
             }
             CommandKind::Register { name, as_name, .. } => {
-                let module = match spec_driver.module_or_last(name.as_ref().map(|x| x.as_ref())) {
+                let module = match spec_driver
+                    .module_or_last(name.as_ref().map(|x| x.as_ref()))
+                {
                     Ok(module) => module,
-                    Err(e) => panic!("No such module, at line {} - ({:?})", e, line),
+                    Err(e) => {
+                        panic!("No such module, at line {} - ({:?})", e, line)
+                    }
                 };
                 spec_driver.add_module(Some(as_name.clone()), module);
             }
-            CommandKind::PerformAction(action) => match run_action(&mut spec_driver, &action) {
-                Ok(_) => {}
-                Err(e) => panic!("Failed to invoke action at line {}: {:?}", line, e),
-            },
+            CommandKind::PerformAction(action) => {
+                match run_action(&mut spec_driver, &action) {
+                    Ok(_) => {}
+                    Err(e) => panic!(
+                        "Failed to invoke action at line {}: {:?}",
+                        line, e
+                    ),
+                }
+            }
         }
     }
 

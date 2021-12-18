@@ -31,7 +31,11 @@ impl Validator for WasmiValidation {
             code_map: Vec::new(),
         }
     }
-    fn on_function_validated(&mut self, _index: u32, output: isa::Instructions) {
+    fn on_function_validated(
+        &mut self,
+        _index: u32,
+        output: isa::Instructions,
+    ) {
         self.code_map.push(output);
     }
     fn finish(self) -> Vec<isa::Instructions> {
@@ -138,25 +142,32 @@ pub fn deny_floating_point(module: &Module) -> Result<(), Error> {
             ];
 
             if DENIED.iter().any(|is_denied| is_denied(op)) {
-                return Err(Error(format!("Floating point operation denied: {:?}", op)));
+                return Err(Error(format!(
+                    "Floating point operation denied: {:?}",
+                    op
+                )));
             }
         }
     }
 
-    if let (Some(sec), Some(types)) = (module.function_section(), module.type_section()) {
+    if let (Some(sec), Some(types)) =
+        (module.function_section(), module.type_section())
+    {
         let types = types.types();
 
         for sig in sec.entries() {
             if let Some(typ) = types.get(sig.type_ref() as usize) {
                 match *typ {
                     Type::Function(ref func) => {
-                        if func
-                            .params()
-                            .iter()
-                            .chain(func.results())
-                            .any(|&typ| typ == ValueType::F32 || typ == ValueType::F64)
-                        {
-                            return Err(Error("Use of floating point types denied".to_string()));
+                        if func.params().iter().chain(func.results()).any(
+                            |&typ| {
+                                typ == ValueType::F32 || typ == ValueType::F64
+                            },
+                        ) {
+                            return Err(Error(
+                                "Use of floating point types denied"
+                                    .to_string(),
+                            ));
                         }
                     }
                 }

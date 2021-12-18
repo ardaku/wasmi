@@ -150,7 +150,12 @@ impl<'a> ImportResolver for ImportsBuilder<'a> {
         signature: &Signature,
     ) -> Result<FuncRef, Error> {
         self.resolver(module_name)
-            .ok_or_else(|| Error::Instantiation(format!("Module {} not found", module_name)))?
+            .ok_or_else(|| {
+                Error::Instantiation(format!(
+                    "Module {} not found",
+                    module_name
+                ))
+            })?
             .resolve_func(field_name, signature)
     }
 
@@ -161,7 +166,12 @@ impl<'a> ImportResolver for ImportsBuilder<'a> {
         global_type: &GlobalDescriptor,
     ) -> Result<GlobalRef, Error> {
         self.resolver(module_name)
-            .ok_or_else(|| Error::Instantiation(format!("Module {} not found", module_name)))?
+            .ok_or_else(|| {
+                Error::Instantiation(format!(
+                    "Module {} not found",
+                    module_name
+                ))
+            })?
             .resolve_global(field_name, global_type)
     }
 
@@ -172,7 +182,12 @@ impl<'a> ImportResolver for ImportsBuilder<'a> {
         memory_type: &MemoryDescriptor,
     ) -> Result<MemoryRef, Error> {
         self.resolver(module_name)
-            .ok_or_else(|| Error::Instantiation(format!("Module {} not found", module_name)))?
+            .ok_or_else(|| {
+                Error::Instantiation(format!(
+                    "Module {} not found",
+                    module_name
+                ))
+            })?
             .resolve_memory(field_name, memory_type)
     }
 
@@ -183,7 +198,12 @@ impl<'a> ImportResolver for ImportsBuilder<'a> {
         table_type: &TableDescriptor,
     ) -> Result<TableRef, Error> {
         self.resolver(module_name)
-            .ok_or_else(|| Error::Instantiation(format!("Module {} not found", module_name)))?
+            .ok_or_else(|| {
+                Error::Instantiation(format!(
+                    "Module {} not found",
+                    module_name
+                ))
+            })?
             .resolve_table(field_name, table_type)
     }
 }
@@ -197,7 +217,11 @@ pub trait ModuleImportResolver {
     /// See [`ImportResolver::resolve_func`] for details.
     ///
     /// [`ImportResolver::resolve_func`]: trait.ImportResolver.html#tymethod.resolve_func
-    fn resolve_func(&self, field_name: &str, _signature: &Signature) -> Result<FuncRef, Error> {
+    fn resolve_func(
+        &self,
+        field_name: &str,
+        _signature: &Signature,
+    ) -> Result<FuncRef, Error> {
         Err(Error::Instantiation(format!(
             "Export {} not found",
             field_name
@@ -254,12 +278,23 @@ pub trait ModuleImportResolver {
 }
 
 impl ModuleImportResolver for ModuleRef {
-    fn resolve_func(&self, field_name: &str, _signature: &Signature) -> Result<FuncRef, Error> {
+    fn resolve_func(
+        &self,
+        field_name: &str,
+        _signature: &Signature,
+    ) -> Result<FuncRef, Error> {
         self.export_by_name(field_name)
-            .ok_or_else(|| Error::Instantiation(format!("Export {} not found", field_name)))?
+            .ok_or_else(|| {
+                Error::Instantiation(format!("Export {} not found", field_name))
+            })?
             .as_func()
             .cloned()
-            .ok_or_else(|| Error::Instantiation(format!("Export {} is not a function", field_name)))
+            .ok_or_else(|| {
+                Error::Instantiation(format!(
+                    "Export {} is not a function",
+                    field_name
+                ))
+            })
     }
 
     fn resolve_global(
@@ -268,10 +303,17 @@ impl ModuleImportResolver for ModuleRef {
         _global_type: &GlobalDescriptor,
     ) -> Result<GlobalRef, Error> {
         self.export_by_name(field_name)
-            .ok_or_else(|| Error::Instantiation(format!("Export {} not found", field_name)))?
+            .ok_or_else(|| {
+                Error::Instantiation(format!("Export {} not found", field_name))
+            })?
             .as_global()
             .cloned()
-            .ok_or_else(|| Error::Instantiation(format!("Export {} is not a global", field_name)))
+            .ok_or_else(|| {
+                Error::Instantiation(format!(
+                    "Export {} is not a global",
+                    field_name
+                ))
+            })
     }
 
     fn resolve_memory(
@@ -280,10 +322,17 @@ impl ModuleImportResolver for ModuleRef {
         _memory_type: &MemoryDescriptor,
     ) -> Result<MemoryRef, Error> {
         self.export_by_name(field_name)
-            .ok_or_else(|| Error::Instantiation(format!("Export {} not found", field_name)))?
+            .ok_or_else(|| {
+                Error::Instantiation(format!("Export {} not found", field_name))
+            })?
             .as_memory()
             .cloned()
-            .ok_or_else(|| Error::Instantiation(format!("Export {} is not a memory", field_name)))
+            .ok_or_else(|| {
+                Error::Instantiation(format!(
+                    "Export {} is not a memory",
+                    field_name
+                ))
+            })
     }
 
     fn resolve_table(
@@ -292,9 +341,16 @@ impl ModuleImportResolver for ModuleRef {
         _table_type: &TableDescriptor,
     ) -> Result<TableRef, Error> {
         self.export_by_name(field_name)
-            .ok_or_else(|| Error::Instantiation(format!("Export {} not found", field_name)))?
+            .ok_or_else(|| {
+                Error::Instantiation(format!("Export {} not found", field_name))
+            })?
             .as_table()
             .cloned()
-            .ok_or_else(|| Error::Instantiation(format!("Export {} is not a table", field_name)))
+            .ok_or_else(|| {
+                Error::Instantiation(format!(
+                    "Export {} is not a table",
+                    field_name
+                ))
+            })
     }
 }

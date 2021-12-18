@@ -7,9 +7,10 @@ use std::env::args;
 use std::fs::File;
 use wasmi::memory_units::*;
 use wasmi::{
-    Error, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef, ImportsBuilder,
-    MemoryDescriptor, MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance,
-    NopExternals, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
+    Error, FuncInstance, FuncRef, GlobalDescriptor, GlobalInstance, GlobalRef,
+    ImportsBuilder, MemoryDescriptor, MemoryInstance, MemoryRef, Module,
+    ModuleImportResolver, ModuleInstance, NopExternals, RuntimeValue,
+    Signature, TableDescriptor, TableInstance, TableRef,
 };
 
 fn load_from_file(filename: &str) -> Module {
@@ -23,7 +24,11 @@ fn load_from_file(filename: &str) -> Module {
 struct ResolveAll;
 
 impl ModuleImportResolver for ResolveAll {
-    fn resolve_func(&self, _field_name: &str, signature: &Signature) -> Result<FuncRef, Error> {
+    fn resolve_func(
+        &self,
+        _field_name: &str,
+        signature: &Signature,
+    ) -> Result<FuncRef, Error> {
         Ok(FuncInstance::alloc_host(signature.clone(), 0))
     }
 
@@ -55,7 +60,10 @@ impl ModuleImportResolver for ResolveAll {
         _field_name: &str,
         table_type: &TableDescriptor,
     ) -> Result<TableRef, Error> {
-        Ok(TableInstance::alloc(table_type.initial(), table_type.maximum()).unwrap())
+        Ok(
+            TableInstance::alloc(table_type.initial(), table_type.maximum())
+                .unwrap(),
+        )
     }
 }
 

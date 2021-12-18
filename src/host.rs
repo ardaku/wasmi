@@ -61,7 +61,8 @@ impl<'a> RuntimeArgs<'a> {
     where
         T: FromRuntimeValue,
     {
-        let value = self.nth_value_checked(idx).expect("Invalid argument index");
+        let value =
+            self.nth_value_checked(idx).expect("Invalid argument index");
         value.try_into().expect("Unexpected argument type")
     }
 
@@ -124,7 +125,10 @@ impl<'a> RuntimeArgs<'a> {
 /// }
 ///
 /// ```
-pub trait HostError: 'static + ::core::fmt::Display + ::core::fmt::Debug + DowncastSync {}
+pub trait HostError:
+    'static + ::core::fmt::Display + ::core::fmt::Debug + DowncastSync
+{
+}
 impl_downcast!(HostError);
 
 /// Trait that allows to implement host functions.
@@ -244,7 +248,8 @@ mod tests {
 
     #[test]
     fn i64_invalid_arg_cast() {
-        let args: RuntimeArgs = (&[RuntimeValue::I64(90534534545322)][..]).into();
+        let args: RuntimeArgs =
+            (&[RuntimeValue::I64(90534534545322)][..]).into();
         assert!(args.nth_checked::<i32>(0).is_err());
     }
 

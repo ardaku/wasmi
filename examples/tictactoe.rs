@@ -7,9 +7,9 @@ use std::env;
 use std::fmt;
 use std::fs::File;
 use wasmi::{
-    Error as InterpreterError, Externals, FuncInstance, FuncRef, HostError, ImportsBuilder,
-    ModuleImportResolver, ModuleInstance, ModuleRef, RuntimeArgs, RuntimeValue, Signature, Trap,
-    ValueType,
+    Error as InterpreterError, Externals, FuncInstance, FuncRef, HostError,
+    ImportsBuilder, ModuleImportResolver, ModuleInstance, ModuleRef,
+    RuntimeArgs, RuntimeValue, Signature, Trap, ValueType,
 };
 
 #[derive(Debug)]
@@ -106,15 +106,18 @@ mod tictactoe {
 
             // Returns Some(player) if all cells contain same Player.
             #[allow(clippy::question_mark)]
-            let all_same = |i1: usize, i2: usize, i3: usize| -> Option<Player> {
-                if self.board[i1].is_none() {
-                    return None;
-                }
-                if self.board[i1] == self.board[i2] && self.board[i2] == self.board[i3] {
-                    return self.board[i1];
-                }
-                None
-            };
+            let all_same =
+                |i1: usize, i2: usize, i3: usize| -> Option<Player> {
+                    if self.board[i1].is_none() {
+                        return None;
+                    }
+                    if self.board[i1] == self.board[i2]
+                        && self.board[i2] == self.board[i3]
+                    {
+                        return self.board[i1];
+                    }
+                    None
+                };
 
             for &(i1, i2, i3) in patterns {
                 if let Some(player) = all_same(i1, i2, i3) {

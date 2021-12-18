@@ -6,7 +6,8 @@ fn main() {
 
     // The CARGO environment variable provides a path to the executable that
     // runs this build process.
-    let cargo_bin = env::var("CARGO").expect("CARGO env variable should be defined");
+    let cargo_bin =
+        env::var("CARGO").expect("CARGO env variable should be defined");
 
     // Build a release version of wasm-kernel. The code in the output wasm binary
     // will be used in benchmarks.

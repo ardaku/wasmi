@@ -26,8 +26,9 @@ use std::error;
 
 use self::context::ModuleContextBuilder;
 use parity_wasm::elements::{
-    BlockType, ExportEntry, External, FuncBody, GlobalEntry, GlobalType, InitExpr, Instruction,
-    Internal, MemoryType, Module, ResizableLimits, TableType, Type, ValueType,
+    BlockType, ExportEntry, External, FuncBody, GlobalEntry, GlobalType,
+    InitExpr, Instruction, Internal, MemoryType, Module, ResizableLimits,
+    TableType, Type, ValueType,
 };
 
 pub mod context;
@@ -108,7 +109,10 @@ pub struct PlainFuncValidator;
 impl FuncValidator for PlainFuncValidator {
     type Output = ();
 
-    fn new(_ctx: &func::FunctionValidationContext, _body: &FuncBody) -> PlainFuncValidator {
+    fn new(
+        _ctx: &func::FunctionValidationContext,
+        _body: &FuncBody,
+    ) -> PlainFuncValidator {
         PlainFuncValidator
     }
 
@@ -123,7 +127,9 @@ impl FuncValidator for PlainFuncValidator {
     fn finish(self) {}
 }
 
-pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error> {
+pub fn validate_module<V: Validator>(
+    module: &Module,
+) -> Result<V::Output, Error> {
     let mut context_builder = ModuleContextBuilder::new();
     let mut imported_globals = Vec::new();
     let mut validation = V::new(module);
@@ -149,9 +155,13 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
         .unwrap_or_default()
     {
         match *import_entry.external() {
-            External::Function(idx) => context_builder.push_func_type_index(idx),
+            External::Function(idx) => {
+                context_builder.push_func_type_index(idx)
+            }
             External::Table(ref table) => context_builder.push_table(*table),
-            External::Memory(ref memory) => context_builder.push_memory(*memory),
+            External::Memory(ref memory) => {
+                context_builder.push_memory(*memory)
+            }
             External::Global(ref global) => {
                 context_builder.push_global(*global);
                 imported_globals.push(*global);
@@ -190,7 +200,8 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
         .function_section()
         .map(|s| s.entries().len())
         .unwrap_or(0);
-    let code_section_len = module.code_section().map(|s| s.bodies().len()).unwrap_or(0);
+    let code_section_len =
+        module.code_section().map(|s| s.bodies().len()).unwrap_or(0);
     if function_section_len != code_section_len {
         return Err(Error(format!(
             "length of function section is {}, while len of code section is {}",
@@ -209,18 +220,22 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
             .expect("function_section_len != 0; function_section_len == code_section_len; qed");
         // check every function body
         for (index, function) in function_section.entries().iter().enumerate() {
-            let function_body = code_section
-                .bodies()
-                .get(index as usize)
-                .ok_or_else(|| Error(format!("Missing body for function {}", index)))?;
-
-            let output = func::drive::<V::FuncValidator>(&context, function, function_body)
-                .map_err(|Error(ref msg)| {
-                    Error(format!(
-                        "Function #{} reading/validation error: {}",
-                        index, msg
-                    ))
+            let function_body =
+                code_section.bodies().get(index as usize).ok_or_else(|| {
+                    Error(format!("Missing body for function {}", index))
                 })?;
+
+            let output = func::drive::<V::FuncValidator>(
+                &context,
+                function,
+                function_body,
+            )
+            .map_err(|Error(ref msg)| {
+                Error(format!(
+                    "Function #{} reading/validation error: {}",
+                    index, msg
+                ))
+            })?;
             validation.on_function_validated(index as u32, output);
         }
     }
@@ -307,10 +322,9 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
     if let Some(data_section) = module.data_section() {
         for data_segment in data_section.entries() {
             context.require_memory(data_segment.index())?;
-            let offset = data_segment
-                .offset()
-                .as_ref()
-                .ok_or_else(|| Error("passive memory segments are not supported".into()))?;
+            let offset = data_segment.offset().as_ref().ok_or_else(|| {
+                Error("passive memory segments are not supported".into())
+            })?;
             let init_ty = expr_const_type(offset, context.globals())?;
             if init_ty != ValueType::I32 {
                 return Err(Error("segment offset should return I32".into()));
@@ -322,10 +336,10 @@ pub fn validate_module<V: Validator>(module: &Module) -> Result<V::Output, Error
     if let Some(element_section) = module.elements_section() {
         for element_segment in element_section.entries() {
             context.require_table(element_segment.index())?;
-            let offset = element_segment
-                .offset()
-                .as_ref()
-                .ok_or_else(|| Error("passive element segments are not supported".into()))?;
+            let offset =
+                element_segment.offset().as_ref().ok_or_else(|| {
+                    Error("passive element segments are not supported".into())
+                })?;
             let init_ty = expr_const_type(offset, context.globals())?;
             if init_ty != ValueType::I32 {
                 return Err(Error("segment offset should return I32".into()));
@@ -359,7 +373,10 @@ fn validate_memory_type(memory_type: &MemoryType) -> Result<(), Error> {
     validate_memory(initial, maximum).map_err(Error)
 }
 
-pub fn validate_memory(initial: u32, maximum: Option<u32>) -> Result<(), String> {
+pub fn validate_memory(
+    initial: u32,
+    maximum: Option<u32>,
+) -> Result<(), String> {
     if initial > LINEAR_MEMORY_MAX_PAGES {
         return Err(format!(
             "initial memory size must be at most {} pages",
@@ -388,7 +405,10 @@ fn validate_table_type(table_type: &TableType) -> Result<(), Error> {
     validate_limits(table_type.limits())
 }
 
-fn validate_global_entry(global_entry: &GlobalEntry, globals: &[GlobalType]) -> Result<(), Error> {
+fn validate_global_entry(
+    global_entry: &GlobalEntry,
+    globals: &[GlobalType],
+) -> Result<(), Error> {
     let init = global_entry.init_expr();
     let init_expr_ty = expr_const_type(init, globals)?;
     if init_expr_ty != global_entry.global_type().content_type() {
@@ -402,7 +422,10 @@ fn validate_global_entry(global_entry: &GlobalEntry, globals: &[GlobalType]) -> 
 }
 
 /// Returns type of this constant expression.
-fn expr_const_type(init_expr: &InitExpr, globals: &[GlobalType]) -> Result<ValueType, Error> {
+fn expr_const_type(
+    init_expr: &InitExpr,
+    globals: &[GlobalType],
+) -> Result<ValueType, Error> {
     let code = init_expr.code();
     if code.len() != 2 {
         return Err(Error(

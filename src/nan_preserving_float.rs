@@ -11,8 +11,11 @@ macro_rules! impl_binop {
 
             fn $func_name(self, other: T) -> Self {
                 $for(
-                    $op::$func_name($is::from_bits(self.0), $is::from_bits(other.into().0))
-                        .to_bits(),
+                    $op::$func_name(
+                        $is::from_bits(self.0),
+                        $is::from_bits(other.into().0),
+                    )
+                    .to_bits(),
                 )
             }
         }
@@ -111,7 +114,10 @@ macro_rules! float {
         }
 
         impl ::core::fmt::Debug for $for {
-            fn fmt(&self, f: &mut ::core::fmt::Formatter) -> ::core::fmt::Result {
+            fn fmt(
+                &self,
+                f: &mut ::core::fmt::Formatter,
+            ) -> ::core::fmt::Result {
                 $is::from(*self).fmt(f)
             }
         }

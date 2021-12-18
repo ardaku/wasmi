@@ -398,11 +398,19 @@ pub use self::global::{GlobalInstance, GlobalRef};
 pub use self::host::{Externals, HostError, NopExternals, RuntimeArgs};
 pub use self::imports::{ImportResolver, ImportsBuilder, ModuleImportResolver};
 pub use self::memory::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
-pub use self::module::{ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef};
-pub use self::runner::{StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT};
+pub use self::module::{
+    ExternVal, ModuleInstance, ModuleRef, NotStartedModuleRef,
+};
+pub use self::runner::{
+    StackRecycler, DEFAULT_CALL_STACK_LIMIT, DEFAULT_VALUE_STACK_LIMIT,
+};
 pub use self::table::{TableInstance, TableRef};
-pub use self::types::{GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType};
-pub use self::value::{Error as ValueError, FromRuntimeValue, LittleEndianConvert, RuntimeValue};
+pub use self::types::{
+    GlobalDescriptor, MemoryDescriptor, Signature, TableDescriptor, ValueType,
+};
+pub use self::value::{
+    Error as ValueError, FromRuntimeValue, LittleEndianConvert, RuntimeValue,
+};
 
 /// WebAssembly-specific sizes and units.
 pub mod memory_units {
@@ -449,8 +457,11 @@ impl Module {
     ///     // Instantiate `module`, etc...
     /// }
     /// ```
-    pub fn from_parity_wasm_module(module: parity_wasm::elements::Module) -> Result<Module, Error> {
-        let prepare::CompiledModule { code_map, module } = prepare::compile_module(module)?;
+    pub fn from_parity_wasm_module(
+        module: parity_wasm::elements::Module,
+    ) -> Result<Module, Error> {
+        let prepare::CompiledModule { code_map, module } =
+            prepare::compile_module(module)?;
 
         Ok(Module { code_map, module })
     }
@@ -543,7 +554,9 @@ impl Module {
     /// ```
     pub fn from_buffer<B: AsRef<[u8]>>(buffer: B) -> Result<Module, Error> {
         let module = parity_wasm::elements::deserialize_buffer(buffer.as_ref())
-            .map_err(|e: parity_wasm::elements::Error| Error::Validation(e.to_string()))?;
+            .map_err(|e: parity_wasm::elements::Error| {
+                Error::Validation(e.to_string())
+            })?;
         Module::from_parity_wasm_module(module)
     }
 

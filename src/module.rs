@@ -7,7 +7,9 @@ use crate::memory_units::Pages;
 use crate::runner::StackRecycler;
 use crate::table::TableRef;
 use crate::types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
-use crate::{Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance, Trap};
+use crate::{
+    Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstance, Trap,
+};
 use alloc::collections::BTreeMap;
 use alloc::{
     borrow::ToOwned,
@@ -18,7 +20,9 @@ use alloc::{
 };
 use core::cell::{Ref, RefCell};
 use core::fmt;
-use parity_wasm::elements::{External, InitExpr, Instruction, Internal, ResizableLimits, Type};
+use parity_wasm::elements::{
+    External, InitExpr, Instruction, Internal, ResizableLimits, Type,
+};
 use validation::{DEFAULT_MEMORY_INDEX, DEFAULT_TABLE_INDEX};
 
 /// Reference to a [`ModuleInstance`].
@@ -231,7 +235,9 @@ impl ModuleInstance {
         let module = loaded_module.module();
         let instance = ModuleRef(Rc::new(ModuleInstance::default()));
 
-        for &Type::Function(ref ty) in module.type_section().map(|ts| ts.types()).unwrap_or(&[]) {
+        for &Type::Function(ref ty) in
+            module.type_section().map(|ts| ts.types()).unwrap_or(&[])
+        {
             let signature = Rc::new(Signature::from_elements(ty));
             instance.push_signature(signature);
         }
@@ -247,7 +253,10 @@ impl ModuleInstance {
                 // Iterate on imports and extern_vals in lockstep, a-la `Iterator:zip`.
                 // We can't use `Iterator::zip` since we want to check if lengths of both iterators are same and
                 // `Iterator::zip` just returns `None` if either of iterators return `None`.
-                let (import, extern_val) = match (imports.next(), extern_vals.next()) {
+                let (import, extern_val) = match (
+                    imports.next(),
+                    extern_vals.next(),
+                ) {
                     (Some(import), Some(extern_val)) => (import, extern_val),
                     (None, None) => break,
                     (Some(_), None) | (None, Some(_)) => {
@@ -258,10 +267,14 @@ impl ModuleInstance {
                 };
 
                 match (import.external(), extern_val) {
-                    (&External::Function(fn_type_idx), &ExternVal::Func(ref func)) => {
-                        let expected_fn_type = instance
-                            .signature_by_index(fn_type_idx)
-                            .expect("Due to validation function type should exists");
+                    (
+                        &External::Function(fn_type_idx),
+                        &ExternVal::Func(ref func),
+                    ) => {
+                        let expected_fn_type =
+                            instance.signature_by_index(fn_type_idx).expect(
+                                "Due to validation function type should exists",
+                            );
                         let actual_fn_type = func.signature();
                         if &*expected_fn_type != actual_fn_type {
                             return Err(Error::Instantiation(format!(
@@ -273,15 +286,24 @@ impl ModuleInstance {
                         }
                         instance.push_func(func.clone())
                     }
-                    (&External::Table(ref tt), &ExternVal::Table(ref table)) => {
+                    (
+                        &External::Table(ref tt),
+                        &ExternVal::Table(ref table),
+                    ) => {
                         match_limits(table.limits(), tt.limits())?;
                         instance.push_table(table.clone());
                     }
-                    (&External::Memory(ref mt), &ExternVal::Memory(ref memory)) => {
+                    (
+                        &External::Memory(ref mt),
+                        &ExternVal::Memory(ref memory),
+                    ) => {
                         match_limits(memory.limits(), mt.limits())?;
                         instance.push_memory(memory.clone());
                     }
-                    (&External::Global(ref gl), &ExternVal::Global(ref global)) => {
+                    (
+                        &External::Global(ref gl),
+                        &ExternVal::Global(ref global),
+                    ) => {
                         if gl.content_type() != global.elements_value_type() {
                             return Err(Error::Instantiation(format!(
                                 "Expect global with {:?} type, but provided global with {:?} type",
@@ -307,13 +329,16 @@ impl ModuleInstance {
                 .function_section()
                 .map(|fs| fs.entries())
                 .unwrap_or(&[]);
-            let bodies = module.code_section().map(|cs| cs.bodies()).unwrap_or(&[]);
+            let bodies =
+                module.code_section().map(|cs| cs.bodies()).unwrap_or(&[]);
             debug_assert!(
                 funcs.len() == bodies.len(),
                 "Due to validation func and body counts must match"
             );
 
-            for (index, (ty, body)) in Iterator::zip(funcs.iter(), bodies.iter()).enumerate() {
+            for (index, (ty, body)) in
+                Iterator::zip(funcs.iter(), bodies.iter()).enumerate()
+            {
                 let signature = instance
                     .signature_by_index(ty.type_ref())
                     .expect("Due to validation type should exists");
@@ -324,15 +349,22 @@ impl ModuleInstance {
                     locals: body.locals().to_vec(),
                     code,
                 };
-                let func_instance =
-                    FuncInstance::alloc_internal(Rc::downgrade(&instance.0), signature, func_body);
+                let func_instance = FuncInstance::alloc_internal(
+                    Rc::downgrade(&instance.0),
+                    signature,
+                    func_body,
+                );
                 instance.push_func(func_instance);
             }
         }
 
-        for table_type in module.table_section().map(|ts| ts.entries()).unwrap_or(&[]) {
-            let table =
-                TableInstance::alloc(table_type.limits().initial(), table_type.limits().maximum())?;
+        for table_type in
+            module.table_section().map(|ts| ts.entries()).unwrap_or(&[])
+        {
+            let table = TableInstance::alloc(
+                table_type.limits().initial(),
+                table_type.limits().maximum(),
+            )?;
             instance.push_table(table);
         }
 
@@ -342,10 +374,12 @@ impl ModuleInstance {
             .unwrap_or(&[])
         {
             let initial: Pages = Pages(memory_type.limits().initial() as usize);
-            let maximum: Option<Pages> = memory_type.limits().maximum().map(|m| Pages(m as usize));
+            let maximum: Option<Pages> =
+                memory_type.limits().maximum().map(|m| Pages(m as usize));
 
-            let memory = MemoryInstance::alloc(initial, maximum)
-                .expect("Due to validation `initial` and `maximum` should be valid");
+            let memory = MemoryInstance::alloc(initial, maximum).expect(
+                "Due to validation `initial` and `maximum` should be valid",
+            );
             instance.push_memory(memory);
         }
 
@@ -355,7 +389,10 @@ impl ModuleInstance {
             .unwrap_or(&[])
         {
             let init_val = eval_init_expr(global_entry.init_expr(), &*instance);
-            let global = GlobalInstance::alloc(init_val, global_entry.global_type().is_mutable());
+            let global = GlobalInstance::alloc(
+                init_val,
+                global_entry.global_type().is_mutable(),
+            );
             instance.push_global(global);
         }
 
@@ -409,7 +446,8 @@ impl ModuleInstance {
     ) -> Result<NotStartedModuleRef<'a>, Error> {
         let module = loaded_module.module();
 
-        let module_ref = ModuleInstance::alloc_module(loaded_module, extern_vals)?;
+        let module_ref =
+            ModuleInstance::alloc_module(loaded_module, extern_vals)?;
 
         for element_segment in module
             .elements_section()
@@ -448,7 +486,9 @@ impl ModuleInstance {
             }
         }
 
-        for data_segment in module.data_section().map(|ds| ds.entries()).unwrap_or(&[]) {
+        for data_segment in
+            module.data_section().map(|ds| ds.entries()).unwrap_or(&[])
+        {
             let offset = data_segment
                 .offset()
                 .as_ref()
@@ -537,35 +577,54 @@ impl ModuleInstance {
         let module = loaded_module.module();
 
         let mut extern_vals = Vec::new();
-        for import_entry in module.import_section().map(|s| s.entries()).unwrap_or(&[]) {
+        for import_entry in
+            module.import_section().map(|s| s.entries()).unwrap_or(&[])
+        {
             let module_name = import_entry.module();
             let field_name = import_entry.field();
             let extern_val = match *import_entry.external() {
                 External::Function(fn_ty_idx) => {
-                    let types = module.type_section().map(|s| s.types()).unwrap_or(&[]);
+                    let types =
+                        module.type_section().map(|s| s.types()).unwrap_or(&[]);
                     let &Type::Function(ref func_type) = types
                         .get(fn_ty_idx as usize)
                         .expect("Due to validation functions should have valid types");
                     let signature = Signature::from_elements(func_type);
-                    let func = imports.resolve_func(module_name, field_name, &signature)?;
+                    let func = imports.resolve_func(
+                        module_name,
+                        field_name,
+                        &signature,
+                    )?;
                     ExternVal::Func(func)
                 }
                 External::Table(ref table_type) => {
-                    let table_descriptor = TableDescriptor::from_elements(table_type);
-                    let table =
-                        imports.resolve_table(module_name, field_name, &table_descriptor)?;
+                    let table_descriptor =
+                        TableDescriptor::from_elements(table_type);
+                    let table = imports.resolve_table(
+                        module_name,
+                        field_name,
+                        &table_descriptor,
+                    )?;
                     ExternVal::Table(table)
                 }
                 External::Memory(ref memory_type) => {
-                    let memory_descriptor = MemoryDescriptor::from_elements(memory_type);
-                    let memory =
-                        imports.resolve_memory(module_name, field_name, &memory_descriptor)?;
+                    let memory_descriptor =
+                        MemoryDescriptor::from_elements(memory_type);
+                    let memory = imports.resolve_memory(
+                        module_name,
+                        field_name,
+                        &memory_descriptor,
+                    )?;
                     ExternVal::Memory(memory)
                 }
                 External::Global(ref global_type) => {
-                    let global_descriptor = GlobalDescriptor::from_elements(global_type);
-                    let global =
-                        imports.resolve_global(module_name, field_name, &global_descriptor)?;
+                    let global_descriptor =
+                        GlobalDescriptor::from_elements(global_type);
+                    let global = imports.resolve_global(
+                        module_name,
+                        field_name,
+                        &global_descriptor,
+                    )?;
                     ExternVal::Global(global)
                 }
             };
@@ -631,7 +690,8 @@ impl ModuleInstance {
     ) -> Result<Option<RuntimeValue>, Error> {
         let func_instance = self.func_by_name(func_name)?;
 
-        FuncInstance::invoke(&func_instance, args, externals).map_err(Error::Trap)
+        FuncInstance::invoke(&func_instance, args, externals)
+            .map_err(Error::Trap)
     }
 
     /// Invoke exported function by a name using recycled stacks.
@@ -650,14 +710,19 @@ impl ModuleInstance {
     ) -> Result<Option<RuntimeValue>, Error> {
         let func_instance = self.func_by_name(func_name)?;
 
-        FuncInstance::invoke_with_stack(&func_instance, args, externals, stack_recycler)
-            .map_err(Error::Trap)
+        FuncInstance::invoke_with_stack(
+            &func_instance,
+            args,
+            externals,
+            stack_recycler,
+        )
+        .map_err(Error::Trap)
     }
 
     fn func_by_name(&self, func_name: &str) -> Result<FuncRef, Error> {
-        let extern_val = self
-            .export_by_name(func_name)
-            .ok_or_else(|| Error::Function(format!("Module doesn't have export {}", func_name)))?;
+        let extern_val = self.export_by_name(func_name).ok_or_else(|| {
+            Error::Function(format!("Module doesn't have export {}", func_name))
+        })?;
 
         match extern_val {
             ExternVal::Func(func_instance) => Ok(func_instance),
@@ -718,8 +783,12 @@ impl<'a> NotStartedModuleRef<'a> {
     /// # Errors
     ///
     /// Returns `Err` if start function traps.
-    pub fn run_start<E: Externals>(self, state: &mut E) -> Result<ModuleRef, Trap> {
-        if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
+    pub fn run_start<E: Externals>(
+        self,
+        state: &mut E,
+    ) -> Result<ModuleRef, Trap> {
+        if let Some(start_fn_idx) = self.loaded_module.module().start_section()
+        {
             let start_func = self
                 .instance
                 .func_by_index(start_fn_idx)
@@ -739,12 +808,18 @@ impl<'a> NotStartedModuleRef<'a> {
         state: &mut E,
         stack_recycler: &mut StackRecycler,
     ) -> Result<ModuleRef, Trap> {
-        if let Some(start_fn_idx) = self.loaded_module.module().start_section() {
+        if let Some(start_fn_idx) = self.loaded_module.module().start_section()
+        {
             let start_func = self
                 .instance
                 .func_by_index(start_fn_idx)
                 .expect("Due to validation start function should exists");
-            FuncInstance::invoke_with_stack(&start_func, &[], state, stack_recycler)?;
+            FuncInstance::invoke_with_stack(
+                &start_func,
+                &[],
+                state,
+                stack_recycler,
+            )?;
         }
         Ok(self.instance)
     }
@@ -770,7 +845,10 @@ impl<'a> NotStartedModuleRef<'a> {
     }
 }
 
-fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> RuntimeValue {
+fn eval_init_expr(
+    init_expr: &InitExpr,
+    module: &ModuleInstance,
+) -> RuntimeValue {
     let code = init_expr.code();
     debug_assert!(
         code.len() == 2,
@@ -791,7 +869,10 @@ fn eval_init_expr(init_expr: &InitExpr, module: &ModuleInstance) -> RuntimeValue
     }
 }
 
-fn match_limits(l1: &ResizableLimits, l2: &ResizableLimits) -> Result<(), Error> {
+fn match_limits(
+    l1: &ResizableLimits,
+    l2: &ResizableLimits,
+) -> Result<(), Error> {
     if l1.initial() < l2.initial() {
         return Err(Error::Instantiation(format!(
             "trying to import with limits l1.initial={} and l2.initial={}",
@@ -847,7 +928,9 @@ mod tests {
 				(start $f))
 			"#,
         );
-        let module = ModuleInstance::new(&module_with_start, &ImportsBuilder::default()).unwrap();
+        let module =
+            ModuleInstance::new(&module_with_start, &ImportsBuilder::default())
+                .unwrap();
         assert!(!module.has_start());
         module.assert_no_start();
     }
@@ -876,15 +959,25 @@ mod tests {
         assert!(ModuleInstance::with_externvals(
             &module_with_single_import,
             [
-                ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 0)),
-                ExternVal::Func(FuncInstance::alloc_host(Signature::new(&[][..], None), 1)),
+                ExternVal::Func(FuncInstance::alloc_host(
+                    Signature::new(&[][..], None),
+                    0
+                )),
+                ExternVal::Func(FuncInstance::alloc_host(
+                    Signature::new(&[][..], None),
+                    1
+                )),
             ]
             .iter(),
         )
         .is_err());
 
         // externval vector is shorter than import count.
-        assert!(ModuleInstance::with_externvals(&module_with_single_import, [].iter(),).is_err());
+        assert!(ModuleInstance::with_externvals(
+            &module_with_single_import,
+            [].iter(),
+        )
+        .is_err());
 
         // externval vector has an unexpected type.
         assert!(ModuleInstance::with_externvals(
