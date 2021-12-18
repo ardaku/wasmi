@@ -11,6 +11,7 @@ use crate::{Error, MemoryInstance, Module, RuntimeValue, Signature, TableInstanc
 use alloc::collections::BTreeMap;
 use alloc::{
     borrow::ToOwned,
+    format,
     rc::Rc,
     string::{String, ToString},
     vec::Vec,

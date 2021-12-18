@@ -66,15 +66,6 @@ Use the following command in order to produce a WebAssembly build:
 cargo build --no-default-features --target wasm32-unknown-unknown
 ```
 
-## Features
-
-On 64-bit platforms we further provide cross-platform suppport for virtual memory usage.
-For this build `wasmi` using:
-
-```
-cargo build --features virtual_memory
-```
-
 ## Benchmarks
 
 In order to benchmark `wasmi` use the following command:

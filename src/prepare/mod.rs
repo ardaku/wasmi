@@ -1,10 +1,9 @@
 use crate::isa;
+use alloc::format;
+use alloc::string::ToString;
 use alloc::vec::Vec;
 use parity_wasm::elements::Module;
 use validation::{validate_module, Error, Validator};
-
-#[cfg(not(feature = "std"))]
-use crate::alloc::string::ToString;
 
 mod compile;
 

@@ -7,7 +7,7 @@ use crate::{
     MemoryInstance, MemoryRef, Module, ModuleImportResolver, ModuleInstance, NopExternals,
     RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef,
 };
-use alloc::vec::Vec;
+use alloc::{format, vec::Vec};
 use std::fs::File;
 
 struct Env {

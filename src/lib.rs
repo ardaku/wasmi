@@ -94,27 +94,21 @@
 //! }
 //! ```
 
+#![no_std]
 #![warn(missing_docs)]
-#![cfg_attr(not(feature = "std"), no_std)]
 #![allow(clippy::len_without_is_empty)]
 #![allow(clippy::new_ret_no_self)]
 
-#[cfg(not(feature = "std"))]
-#[macro_use]
 extern crate alloc;
-#[cfg(feature = "std")]
-extern crate std as alloc;
 
 use alloc::{
     boxed::Box,
+    format,
     string::{String, ToString},
     vec::Vec,
 };
 use core::fmt;
-#[cfg(feature = "std")]
-use std::error;
 
-#[cfg(not(feature = "std"))]
 extern crate libm;
 
 /// Error type which can be thrown by wasm code or by host environment.
@@ -146,13 +140,6 @@ impl Trap {
 impl fmt::Display for Trap {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "Trap: {:?}", self.kind)
-    }
-}
-
-#[cfg(feature = "std")]
-impl error::Error for Trap {
-    fn description(&self) -> &str {
-        "runtime trap"
     }
 }
 
@@ -349,23 +336,6 @@ impl fmt::Display for Error {
             Error::Value(ref s) => write!(f, "Value: {}", s),
             Error::Trap(ref s) => write!(f, "Trap: {:?}", s),
             Error::Host(ref e) => write!(f, "User: {}", e),
-        }
-    }
-}
-
-#[cfg(feature = "std")]
-impl error::Error for Error {
-    fn description(&self) -> &str {
-        match *self {
-            Error::Validation(ref s) => s,
-            Error::Instantiation(ref s) => s,
-            Error::Function(ref s) => s,
-            Error::Table(ref s) => s,
-            Error::Memory(ref s) => s,
-            Error::Global(ref s) => s,
-            Error::Value(ref s) => s,
-            Error::Trap(_) => "Trap",
-            Error::Host(_) => "Host error",
         }
     }
 }

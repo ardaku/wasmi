@@ -1,7 +1,7 @@
 use crate::func::FuncRef;
 use crate::module::check_limits;
 use crate::Error;
-use alloc::{rc::Rc, vec::Vec};
+use alloc::{format, rc::Rc, vec, vec::Vec};
 use core::cell::RefCell;
 use core::fmt;
 use core::u32;

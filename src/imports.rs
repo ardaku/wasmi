@@ -5,7 +5,7 @@ use crate::module::ModuleRef;
 use crate::table::TableRef;
 use crate::types::{GlobalDescriptor, MemoryDescriptor, TableDescriptor};
 use crate::{Error, Signature};
-use alloc::{collections::BTreeMap, string::String};
+use alloc::{collections::BTreeMap, format, string::String};
 
 /// Resolver of a module's dependencies.
 ///

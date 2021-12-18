@@ -1,7 +1,7 @@
 use crate::memory_units::{Bytes, Pages, RoundUpTo};
 use crate::value::LittleEndianConvert;
 use crate::Error;
-use alloc::{rc::Rc, string::ToString, vec::Vec};
+use alloc::{format, rc::Rc, string::ToString, vec::Vec};
 use core::{
     cell::{Cell, Ref, RefCell, RefMut},
     cmp, fmt,
@@ -10,11 +10,6 @@ use core::{
 };
 use parity_wasm::elements::ResizableLimits;
 
-#[cfg(all(feature = "virtual_memory", target_pointer_width = "64"))]
-#[path = "mmap_bytebuf.rs"]
-mod bytebuf;
-
-#[cfg(not(all(feature = "virtual_memory", target_pointer_width = "64")))]
 #[path = "vec_bytebuf.rs"]
 mod bytebuf;
 
@@ -579,7 +574,7 @@ mod tests {
     use super::{MemoryInstance, MemoryRef, LINEAR_MEMORY_PAGE_SIZE};
     use crate::memory_units::Pages;
     use crate::Error;
-    use alloc::rc::Rc;
+    use alloc::{rc::Rc, vec, vec::Vec};
 
     #[test]
     fn alloc() {

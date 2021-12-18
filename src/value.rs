@@ -819,13 +819,6 @@ impl_integer!(u32);
 impl_integer!(i64);
 impl_integer!(u64);
 
-#[cfg(feature = "std")]
-mod fmath {
-    pub use f32;
-    pub use f64;
-}
-
-#[cfg(not(feature = "std"))]
 mod fmath {
     pub use super::libm_adapters::f32;
     pub use super::libm_adapters::f64;
@@ -923,7 +916,6 @@ impl_float!(f64, f64, i64);
 impl_float!(F32, f32, i32);
 impl_float!(F64, f64, i64);
 
-#[cfg(not(feature = "std"))]
 mod libm_adapters {
     pub mod f32 {
         pub fn abs(v: f32) -> f32 {

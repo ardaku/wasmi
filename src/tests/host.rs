@@ -9,7 +9,7 @@ use crate::{
     MemoryInstance, MemoryRef, ModuleImportResolver, ModuleInstance, ModuleRef, ResumableError,
     RuntimeArgs, RuntimeValue, Signature, TableDescriptor, TableInstance, TableRef, Trap, TrapKind,
 };
-use alloc::boxed::Box;
+use alloc::{format, boxed::Box};
 use std::println;
 
 #[derive(Debug, Clone, PartialEq)]

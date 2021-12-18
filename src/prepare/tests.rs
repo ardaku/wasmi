@@ -2,6 +2,7 @@
 extern crate std;
 
 use alloc::vec::Vec;
+use alloc::vec;
 use std::println;
 
 use super::{compile_module, CompiledModule};

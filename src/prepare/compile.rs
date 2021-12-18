@@ -1,4 +1,4 @@
-use alloc::{string::String, vec::Vec};
+use alloc::{format, string::String, vec::Vec};
 
 use parity_wasm::elements::{BlockType, FuncBody, Instruction};
 
