@@ -1,7 +1,7 @@
 use crate::memory_units::{Bytes, Pages, RoundUpTo};
 use crate::value::LittleEndianConvert;
 use crate::Error;
-use alloc::{format, rc::Rc, string::ToString, vec::Vec};
+use alloc::{format, rc::Rc, string::ToString};
 use core::{
     cell::{Cell, Ref, RefCell, RefMut},
     cmp, fmt,
@@ -196,20 +196,6 @@ impl MemoryInstance {
             T::from_little_endian(&buffer.as_slice_mut()[region.range()])
                 .expect("Slice size is checked"),
         )
-    }
-
-    /// Copy data from memory at given offset.
-    ///
-    /// This will allocate vector for you.
-    /// If you can provide a mutable slice you can use [`get_into`].
-    ///
-    /// [`get_into`]: #method.get_into
-    #[deprecated(since = "0.10.0", note = "use get_into or get_value method instead")]
-    pub fn get(&self, offset: u32, size: usize) -> Result<Vec<u8>, Error> {
-        let mut buffer = self.buffer.borrow_mut();
-        let region = self.checked_region(&mut buffer, offset as usize, size)?;
-
-        Ok(buffer.as_slice_mut()[region.range()].to_vec())
     }
 
     /// Copy data from given offset in the memory into `target` slice.
